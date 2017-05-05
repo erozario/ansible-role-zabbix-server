@@ -1,0 +1,5 @@
+---
+# vars file for ansible-role-zabbix-server
+
+apache_user: apache
+apache_group: apache

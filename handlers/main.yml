@@ -1,0 +1,11 @@
+---
+# handlers file for ansible-role-zabbix-server
+
+- name: "zabbix"
+  service: name=zabbix-server state=reloaded enabled=yes
+
+- name: "mysql"
+  service: name=mysqld state=reloaded enabled=yes
+
+- name: "httpd"
+  service: name=httpd state=reloaded enabled=yes

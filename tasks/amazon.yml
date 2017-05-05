@@ -1,0 +1,68 @@
+---
+# Tasks specific for AWS systems
+
+- name: "Amazon | Install packages"
+  package: name={{ item }} state=latest
+  with_items:
+    - php56
+    - php56-gd
+    - php56-bcmath
+    - php56-mbstring
+    - php56-xml
+    - php56-ldap
+    - php56-common
+    - php-mysqli
+    - mysql-devel
+    - gcc
+
+- name: "Amazon | Use Zabbix package name"
+  set_fact:
+      zabbix_server_package: "zabbix-server-{{ database_type }}"
+  when: zabbix_repo == "zabbix"
+
+- name: "Amazon | Set facts for Zabbix"
+  set_fact:
+    apache_log: httpd
+    datafiles_path: "/usr/share/doc/zabbix-server-{{ database_type }}-{{ zabbix_version }}*"
+
+- name: "Amazon | Install basic repo file"
+  template: src=amz.repo.j2
+            dest=/etc/yum.repos.d/zabbix.repo
+            owner=root
+            group=root
+            mode=0644
+  when: zabbix_repo == "zabbix"
+
+
+- name: "Amazon | Installing zabbix-server-{{ database_type }}"
+  package:  name={{ zabbix_server_package }} state=present
+
+- name: "Amazon | Install zabbix-web-{{ database_type }}"
+  package:  name=zabbix-web-{{ database_type }} state=present
+  when: zabbix_web
+
+- name: "Amazon | Install apache vhost"
+  template: src=vhost.conf.j2
+            dest=/etc/httpd/conf.d/vhost.conf
+            owner=root
+            group=root
+            mode=0644
+  when: zabbix_vhost and zabbix_web
+
+- name: "Restart httpd"
+  service: name=httpd state=reloaded enabled=yes
+
+- name: "Amazon | Install Ansible module dependencies"
+  yum: name=python-psycopg2
+       state=present
+  when: zabbix_database_creation
+
+- name: "Amazon | Install the Python MySQLB module"
+  pip: name=MySQL-python
+
+- name: "Amazon | Install Mysql Client"
+  package: name=mysql-server state=present
+  when: database_type == 'mysql'
+
+- name: "Restart mysqld"
+  service: name=mysqld state=restarted enabled=yes
